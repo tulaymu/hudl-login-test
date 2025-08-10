@@ -6,7 +6,7 @@ Automated tests for Hudl login and logout using **Selenium** and **pytest**.
 
 ### 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/hudl-login-test.git
+git clone https://github.com/tulaymu/hudl-login-test.git
 cd hudl-login-test
 ```
 
