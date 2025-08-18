@@ -1,0 +1,23 @@
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",                    # Show summary of all failed tests
+    "--strict-markers",       # Strict marker validation
+    "--strict-config",        # Strict config validation
+    "--tb=short",            # Shorter traceback format
+    "--maxfail=3",           # Stop after 3 failures
+    "--durations=10",        # Show 10 slowest tests
+]
+testpaths = ["tests"]
+markers = [
+    "smoke: Quick smoke tests for critical functionality",
+    "regression: Regression tests for bug fixes", 
+    "slow: Slow-running tests",
+    "login: Login-related tests",
+    "logout: Logout-related tests",
+    "validation: Input validation tests"
+]
+filterwarnings = [
+    "ignore::urllib3.exceptions.NotOpenSSLWarning",
+    "ignore::DeprecationWarning"
+]
