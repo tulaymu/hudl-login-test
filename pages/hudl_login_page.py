@@ -1,13 +1,25 @@
+"""
+Hudl Login Page Object Model
+Handles login flow, logout functionality, and login state detection.
+"""
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from .base_page import BasePage
 from selenium.webdriver.support.ui import WebDriverWait
+from .base_page import BasePage
 
 
 class HudlLoginPage(BasePage):
-    """Login page object + top‑nav logout."""
+    """
+    Page object for Hudl login functionality.
+    
+    Handles:
+    - Login flow from homepage through email/password entry
+    - Logout with hover-based user menu interaction  
+    - Login state detection (fan.hudl.com vs login screens)
+    """
 
     HOME_URL = "https://www.hudl.com/"
 
@@ -20,12 +32,14 @@ class HudlLoginPage(BasePage):
     PASSWORD_FIELD  = (By.ID, "password")
     CONTINUE_BUTTON = (By.XPATH, "//button[normalize-space()='Continue' and not(@disabled)]")
 
-    # App (logged-in) marker
-    TOP_NAV = (By.CSS_SELECTOR, "[data-qa-id='webnav'], nav")
-
-    # User menu + logout (simple, robust selectors)
-    USER_MENU_BUTTON = (By.CSS_SELECTOR, "[data-qa-id='webnav-user-menu'], .hui-globalusermenu")
+    # User menu + logout (improved selectors with fallbacks)
+    USER_MENU_BUTTON = (By.CSS_SELECTOR, "[data-qa-id='webnav-user-menu'], .hui-globalusermenu, [class*='user'], [class*='avatar'], [class*='profile']")
     LOGOUT_BUTTON    = (By.CSS_SELECTOR, "[data-qa-id*='logout'], a[href*='/logout']")
+    LOGOUT_BUTTON_XPATH = (By.XPATH, "//a[contains(text(), 'Log out')] | //a[contains(text(), 'Logout')] | //button[contains(text(), 'Log out')] | //button[contains(text(), 'Logout')]")
+    
+    # Login button for logged-out state detection
+    LOGIN_BUTTON = (By.CSS_SELECTOR, "a[href*='login'], .login-button")
+    LOGIN_BUTTON_XPATH = (By.XPATH, "//button[contains(text(), 'Log In')] | //a[contains(text(), 'Log In')]")
 
     # --- small helper 
     def _visible(self, locator, timeout: int = 3) -> bool:
@@ -58,45 +72,86 @@ class HudlLoginPage(BasePage):
         self.open_login_dropdown_and_choose_hudl()
         self.enter_email(email)
         self.enter_password(password)
+        # Wait for login to complete and redirect
+        time.sleep(3)
 
     # --- checks 
-    def is_dashboard_visible(self) -> bool:
-        """True when we land on the app home/dashboard."""
+    def is_on_fan_hudl(self) -> bool:
+        """True when we successfully logged in and are on fan.hudl.com"""
         try:
-            self.wait.until(EC.presence_of_element_located(self.TOP_NAV))
-            self.url_contains("/home")
-            return True
+            current_url = self.driver.current_url
+            return "fan.hudl.com" in current_url
         except Exception:
             return False
 
+    def is_on_login_screen(self) -> bool:
+        """True when we're on the login screen (email field visible)"""
+        return self._visible(self.EMAIL_FIELD, timeout=3)
+
     def is_logged_out(self) -> bool:
         """
-        True when we’re no longer on /home and we see either:
-        - the identity login (email field), or
-        - the public site’s Log in dropdown.
+        True when we can see the Log In button (indicating logged out state)
+        OR when we're still on the login/email screens
         """
-        if "/home" in self.driver.current_url:
-            return False
-        return self._visible(self.EMAIL_FIELD) or self._visible(self.LOGIN_DROPDOWN_TOGGLE)
+        return (self._visible(self.LOGIN_BUTTON, timeout=5) or 
+                self._visible(self.LOGIN_DROPDOWN_TOGGLE, timeout=5) or
+                self._visible(self.LOGIN_BUTTON_XPATH, timeout=5) or
+                self._visible(self.EMAIL_FIELD, timeout=5))
 
-    # --- logout 
+    # --- logout with improved hover mechanism
     def logout(self):
-        """Open the user menu and click Log out."""
+        """Open the user menu using hover and click Log out."""
         try:
-            # open the user menu
-            btn = self.wait_visible(self.USER_MENU_BUTTON)
-            try:
+            # Find the user menu button with more robust search
+            user_menu_elements = self.driver.find_elements(*self.USER_MENU_BUTTON)
+            if not user_menu_elements:
+                raise TimeoutException("User menu button not found")
+            
+            btn = user_menu_elements[0]
+            
+            # Use ActionChains to hover over the user menu to reveal logout
+            actions = ActionChains(self.driver)
+            actions.move_to_element(btn).perform()
+            
+            # Wait a moment for the dropdown to appear
+            time.sleep(1)
+            
+            # Try to find logout button with CSS selector first, then XPath
+            logout_elements = self.driver.find_elements(*self.LOGOUT_BUTTON)
+            if not logout_elements:
+                logout_elements = self.driver.find_elements(*self.LOGOUT_BUTTON_XPATH)
+            
+            if logout_elements:
+                logout_elements[0].click()
+            else:
+                # Fallback: click the user menu first then try logout
                 btn.click()
-            except Exception:
-                ActionChains(self.driver).move_to_element(btn).perform()
-                self.wait_clickable(self.USER_MENU_BUTTON).click()
-
-            # click Log out and wait for navigation/visibility change
-            old = self.driver.current_url
-            self.click(self.LOGOUT_BUTTON)
-            try:
-                self.wait.until(EC.url_changes(old))
-            except Exception:
-                pass
+                time.sleep(1)
+                
+                # Try CSS selector first
+                try:
+                    logout_element = self.wait_visible(self.LOGOUT_BUTTON)
+                    logout_element.click()
+                except:
+                    # Try XPath selector
+                    logout_element = self.wait_visible(self.LOGOUT_BUTTON_XPATH)
+                    logout_element.click()
+            
+            # Wait for logout to complete
+            time.sleep(2)
+            
         except TimeoutException:
             raise
+        except Exception as e:
+            # Final fallback: try just clicking user menu and any logout link
+            try:
+                btn = self.wait_visible(self.USER_MENU_BUTTON)
+                btn.click()
+                time.sleep(1)
+                
+                # Try to find any element with "logout" text
+                logout_element = self.driver.find_element(By.XPATH, "//*[contains(translate(text(), 'LOGOUT', 'logout'), 'logout')]")
+                logout_element.click()
+                time.sleep(2)
+            except Exception:
+                raise Exception(f"Logout failed: {str(e)}")
