@@ -4,20 +4,19 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 
 class BasePage:
-    """Base page with robust wait strategies and element detection."""
+    """Base page with wait strategies."""
 
     def __init__(self, driver, timeout: int = 10):
         self.driver = driver
         self.wait = WebDriverWait(driver, timeout)
 
-    # ---- Enhanced waits ----
     def wait_visible(self, locator, timeout=None):
-        """Wait for element to be visible with custom timeout."""
+        """Wait for element to be visible."""
         wait = WebDriverWait(self.driver, timeout or 10)
         return wait.until(EC.visibility_of_element_located(locator))
 
     def wait_clickable(self, locator, timeout=None):
-        """Wait for element to be clickable with custom timeout."""
+        """Wait for element to be clickable."""
         wait = WebDriverWait(self.driver, timeout or 10)
         return wait.until(EC.element_to_be_clickable(locator))
 
@@ -39,7 +38,6 @@ class BasePage:
             raise TimeoutException(f"Expected at least {min_count} elements, found {len(elements)}")
         return elements
 
-    # ---- Enhanced element interactions ----
     def click(self, locator, timeout=None):
         """Click element with explicit wait."""
         element = self.wait_clickable(locator, timeout)
@@ -55,7 +53,7 @@ class BasePage:
         return element
 
     def is_element_present(self, locator, timeout=3):
-        """Check if element is present without throwing exception."""
+        """Check if element is present."""
         try:
             self.wait_visible(locator, timeout)
             return True
@@ -71,7 +69,7 @@ class BasePage:
             return True
 
     def url_contains(self, fragment: str, timeout=10) -> bool:
-        """Check if URL contains fragment with wait."""
+        """Check if URL contains fragment."""
         try:
             self.wait_url_contains(fragment, timeout)
             return True

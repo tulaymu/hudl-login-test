@@ -1,22 +1,21 @@
 # Hudl Login Test Suite
 
-Automated tests for Hudl login and logout functionality using **Selenium** and **pytest**.
+Automated tests for Hudl login functionality using Selenium and pytest.
 
 ## Features
 
-✅ **Login Success**: Tests successful login and detection of landing on `fan.hudl.com`  
-✅ **Logout Functionality**: Tests logout using hover-based user menu interaction  
-✅ **Error Handling**: Tests various error scenarios (wrong password, invalid email, empty fields)  
-✅ **Robust Selectors**: Uses multiple fallback selectors for reliable element detection
+- Login success testing
+- Logout functionality
+- Error handling for invalid credentials
+- Empty field validation
 
 ## Test Cases
 
-- `test_login_success` - Verifies successful login lands on fan.hudl.com
-- `test_logout_after_login` - Tests complete login -> logout flow 
-- `test_login_wrong_password_shows_error` - Verifies wrong password doesn't log in
-- `test_login_invalid_email_format` - Tests invalid email stays on login screen
-- `test_login_empty_email_field` - Tests empty email validation
-- `test_login_empty_password` - Tests empty password validation
+- Login with valid credentials
+- Logout after successful login
+- Wrong password validation
+- Invalid email format testing
+- Empty field validation
 
 ## Setup
 

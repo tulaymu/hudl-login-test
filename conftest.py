@@ -50,6 +50,12 @@ def driver(test_config):
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
         
+        # Disable password manager and popups for testing
+        options.add_experimental_option("prefs", {
+            "credentials_enable_service": False,
+            "profile.password_manager_enabled": False
+        })
+        
         driver = webdriver.Chrome(options=options)
         
     elif browser == "firefox":
