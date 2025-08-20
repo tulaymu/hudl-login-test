@@ -34,17 +34,19 @@ class TestLogout:
     def test_logout_after_successful_login(self, driver, creds):
         """Test that user can successfully logout after logging in."""
         page = HudlLoginPage(driver)
-        
+
         # Setup: Login first
         page.login(creds["email"], creds["password"])
         assert page.is_on_fan_hudl(), "Could not login with provided credentials"
-        
+
         # Perform logout
         page.logout()
-        
-        # Verify logout - check we're not on fan.hudl.com anymore
-        current_url = driver.current_url
-        assert "hudl.com" in current_url, f"Expected to be on hudl.com after logout. Current URL: {current_url}"
+
+        # Verify logout - check if login button is visible (proper logout verification)
+        assert page.is_logged_out(), (
+            f"Expected to be logged out with login button visible. "
+            f"Current URL: {driver.current_url}"
+        )
 
 
 class TestInvalidCredentials:

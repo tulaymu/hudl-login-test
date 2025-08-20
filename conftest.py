@@ -78,7 +78,7 @@ def driver(test_config):
     yield driver
     
     # Cleanup
-    driver.quit()
+    #driver.quit()
 
 
 @pytest.fixture(autouse=True)
